@@ -187,17 +187,23 @@ public class ReceivePacket {
                     result.append(line);
                 }
 
+                // Check if the result is a JSON object
+                if (result.charAt(0) != '{') {
+                    log.error("Result " + result.toString() + " is not a JSON object");
+                    continue;
+                }
+
                 JSONObject object = (JSONObject) JSONValue.parse(result.toString());
 
                 if (object != null) {
                     Long time = (Long) object.get("time");
 
-
+                    // Check if the request is a new one (created after last check)
                     if (time > last) {
                         String token = (String) object.get("token");
                         byte[] tokenHex = SimpleCrypto.toByte(token);
 
-                        int[] payload = new int[] { tokenHex[0], tokenHex[1] };
+                        int[] payload = new int[] { tokenHex[0], tokenHex[1], tokenHex[2] };
 
                         XBeeAddress16 destination = new XBeeAddress16(0xFF, 0xFF);
                         TxRequest16 tx = new TxRequest16(destination, payload);
