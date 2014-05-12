@@ -29,7 +29,6 @@ import org.apache.http.client.AuthCache;
 import org.apache.http.client.CredentialsProvider;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
-import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.protocol.HttpClientContext;
 import org.apache.http.impl.auth.BasicScheme;
 import org.apache.http.impl.client.BasicAuthCache;
@@ -67,20 +66,15 @@ public class ReceivePacket {
         // Transmit stuff
         final int timeout = 5000;
 
-//        int count = 0;
-//        int errors = 0;
         int ackErrors = 0;
         int ccaErrors = 0;
         int purgeErrors = 0;
         long now;
 
         // HTTP stuff
-        String url = "http://ec2-54-186-213-97.us-west-2.compute.amazonaws.com:3000/";
-//        DefaultHttpClient defaultHttpClient = new DefaultHttpClient();
-//        DefaultHttpClient httpClient = HttpClientBuilder.create().build();
-//        CredentialsProvider credentialsProvider = new BasicCredentialsProvider();
         CloseableHttpClient httpClient = HttpClientBuilder.create().build();
         HttpHost httpHost = new HttpHost("ec2-54-186-213-97.us-west-2.compute.amazonaws.com", 3000, "http");
+
         CredentialsProvider credentialsProvider = new BasicCredentialsProvider();
         credentialsProvider.setCredentials(
                 new AuthScope(httpHost.getHostName(), httpHost.getPort()),
@@ -97,20 +91,7 @@ public class ReceivePacket {
         httpClientContext.setCredentialsProvider(credentialsProvider);
         httpClientContext.setAuthCache(authCache);
 
-        HttpPost post = new HttpPost(url);
         HttpGet httpGet = new HttpGet("/token-requests/1");
-
-        //////////test
-//        for (int i = 0; i < 3; i++) {
-//            CloseableHttpResponse response = httpClient.execute(
-//                    httpHost, get, httpClientContext);
-//            try {
-//                HttpEntity entity = response.getEntity();
-//
-//            } finally {
-//                response.close();
-//            }
-//        }
 
         CloseableHttpResponse httpResponse;
 
@@ -126,52 +107,6 @@ public class ReceivePacket {
 
 			// Loop indefinitely; sleeps for a few seconds at the end of every iteration
             while (true) {
-
-                // Check for response packets
-//				try {
-//					XBeeResponse response = xbee.getResponse();
-//					count++;
-//
-//					if (response.isError()) {
-//						log.info("response contains errors", ((ErrorResponse)response).getException());
-//						errors++;
-//					}
-//
-//					for (int i = 0; i < response.getPacketBytes().length; i++) {
-//						log.info("packet [" + i + "] " + ByteUtils.toBase16(response.getPacketBytes()[i]));
-//					}
-//
-// 					if (response.getApiId() == ApiId.RX_16_RESPONSE) {
-//						log.info("Received RX 16 packet " + response);
-//
-//                        List<BasicNameValuePair> params = Arrays.asList(
-//                                new BasicNameValuePair("rx", response.toString())
-//                        );
-//
-//                        post.setEntity(new UrlEncodedFormEntity(params));
-//
-//                        httpResponse = httpClient.execute(post);
-//
-//                        br = new BufferedReader(new InputStreamReader(httpResponse.getEntity().getContent()));
-//
-//                        result = new StringBuffer();
-//
-//                        while ((line = br.readLine()) != null) {
-//                            result.append(line);
-//                        }
-//
-//                        post.releaseConnection();
-//
-//// 					} else if (response.getApiId() == ApiId.RX_64_RESPONSE) {
-//// 						log.info("Received RX 64 packet " + ((RxResponse64)response));
-//					} else {
-//						log.info("Ignoring mystery packet " + response.toString());
-//					}
-//
-////					log.debug("Received response: " + response.toString() + ", count is " + count + ", errors is " + errors);
-//				} catch (Exception e) {
-//					log.error(e);
-//				}
 
                 // Check if there are queued tx requests on the server
                 httpResponse = httpClient.execute(httpHost, httpGet, httpClientContext);
