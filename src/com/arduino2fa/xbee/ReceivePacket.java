@@ -22,24 +22,20 @@ package com.arduino2fa.xbee;
 import com.rapplogic.xbee.api.*;
 import com.rapplogic.xbee.api.wpan.TxRequest16;
 import com.rapplogic.xbee.api.wpan.TxStatusResponse;
-import com.rapplogic.xbee.util.ByteUtils;
-import org.apache.http.HttpEntity;
 import org.apache.http.HttpHost;
-import org.apache.http.HttpResponse;
 import org.apache.http.auth.AuthScope;
 import org.apache.http.auth.UsernamePasswordCredentials;
 import org.apache.http.client.AuthCache;
 import org.apache.http.client.CredentialsProvider;
-import org.apache.http.client.HttpClient;
-import org.apache.http.client.entity.UrlEncodedFormEntity;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.protocol.HttpClientContext;
 import org.apache.http.impl.auth.BasicScheme;
-import org.apache.http.impl.client.*;
-import org.apache.http.message.BasicNameValuePair;
-import org.apache.http.protocol.HTTP;
+import org.apache.http.impl.client.BasicAuthCache;
+import org.apache.http.impl.client.BasicCredentialsProvider;
+import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.log4j.Logger;
 import org.apache.log4j.PropertyConfigurator;
 import org.json.simple.JSONObject;
@@ -47,8 +43,6 @@ import org.json.simple.JSONValue;
 
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
-import java.util.Arrays;
-import java.util.List;
 
 /**
  * Receives IO samples from remote radio
@@ -81,12 +75,12 @@ public class ReceivePacket {
         long now;
 
         // HTTP stuff
-        String url = "http://spinningarrow.no-ip.biz:3000/";
+        String url = "http://ec2-54-186-213-97.us-west-2.compute.amazonaws.com:3000/";
 //        DefaultHttpClient defaultHttpClient = new DefaultHttpClient();
 //        DefaultHttpClient httpClient = HttpClientBuilder.create().build();
 //        CredentialsProvider credentialsProvider = new BasicCredentialsProvider();
         CloseableHttpClient httpClient = HttpClientBuilder.create().build();
-        HttpHost httpHost = new HttpHost("localhost", 3000, "http");
+        HttpHost httpHost = new HttpHost("ec2-54-186-213-97.us-west-2.compute.amazonaws.com", 3000, "http");
         CredentialsProvider credentialsProvider = new BasicCredentialsProvider();
         credentialsProvider.setCredentials(
                 new AuthScope(httpHost.getHostName(), httpHost.getPort()),
@@ -104,81 +98,83 @@ public class ReceivePacket {
         httpClientContext.setAuthCache(authCache);
 
         HttpPost post = new HttpPost(url);
-        HttpGet get = new HttpGet("/token-requests/1");
+        HttpGet httpGet = new HttpGet("/token-requests/1");
 
         //////////test
-        for (int i = 0; i < 3; i++) {
-            CloseableHttpResponse response = httpClient.execute(
-                    httpHost, get, httpClientContext);
-            try {
-                HttpEntity entity = response.getEntity();
+//        for (int i = 0; i < 3; i++) {
+//            CloseableHttpResponse response = httpClient.execute(
+//                    httpHost, get, httpClientContext);
+//            try {
+//                HttpEntity entity = response.getEntity();
+//
+//            } finally {
+//                response.close();
+//            }
+//        }
 
-            } finally {
-                response.close();
-            }
-        }
+        CloseableHttpResponse httpResponse;
 
-        HttpResponse httpResponse;
         BufferedReader br;
         StringBuffer result;
         String line;
 
-		try {			
+		try {
+            // Connect to the XBee
 			xbee.open(XbeeConfig.PORT, XbeeConfig.BAUD_RATE);
 
             now = System.currentTimeMillis();
 
-			// Loop indefinitely; sleeps for 5 seconds in the end of every iteration
+			// Loop indefinitely; sleeps for a few seconds at the end of every iteration
             while (true) {
 
                 // Check for response packets
-				try {
-					XBeeResponse response = xbee.getResponse();
-					count++;
-					
-					if (response.isError()) {
-						log.info("response contains errors", ((ErrorResponse)response).getException());
-						errors++;
-					}
+//				try {
+//					XBeeResponse response = xbee.getResponse();
+//					count++;
+//
+//					if (response.isError()) {
+//						log.info("response contains errors", ((ErrorResponse)response).getException());
+//						errors++;
+//					}
+//
+//					for (int i = 0; i < response.getPacketBytes().length; i++) {
+//						log.info("packet [" + i + "] " + ByteUtils.toBase16(response.getPacketBytes()[i]));
+//					}
+//
+// 					if (response.getApiId() == ApiId.RX_16_RESPONSE) {
+//						log.info("Received RX 16 packet " + response);
+//
+//                        List<BasicNameValuePair> params = Arrays.asList(
+//                                new BasicNameValuePair("rx", response.toString())
+//                        );
+//
+//                        post.setEntity(new UrlEncodedFormEntity(params));
+//
+//                        httpResponse = httpClient.execute(post);
+//
+//                        br = new BufferedReader(new InputStreamReader(httpResponse.getEntity().getContent()));
+//
+//                        result = new StringBuffer();
+//
+//                        while ((line = br.readLine()) != null) {
+//                            result.append(line);
+//                        }
+//
+//                        post.releaseConnection();
+//
+//// 					} else if (response.getApiId() == ApiId.RX_64_RESPONSE) {
+//// 						log.info("Received RX 64 packet " + ((RxResponse64)response));
+//					} else {
+//						log.info("Ignoring mystery packet " + response.toString());
+//					}
+//
+////					log.debug("Received response: " + response.toString() + ", count is " + count + ", errors is " + errors);
+//				} catch (Exception e) {
+//					log.error(e);
+//				}
 
-					for (int i = 0; i < response.getPacketBytes().length; i++) {
-						log.info("packet [" + i + "] " + ByteUtils.toBase16(response.getPacketBytes()[i]));
-					}
-					
- 					if (response.getApiId() == ApiId.RX_16_RESPONSE) {
-						log.info("Received RX 16 packet " + response);
-
-                        List<BasicNameValuePair> params = Arrays.asList(
-                                new BasicNameValuePair("rx", response.toString())
-                        );
-
-                        post.setEntity(new UrlEncodedFormEntity(params));
-
-                        httpResponse = httpClient.execute(post);
-
-                        br = new BufferedReader(new InputStreamReader(httpResponse.getEntity().getContent()));
-
-                        result = new StringBuffer();
-
-                        while ((line = br.readLine()) != null) {
-                            result.append(line);
-                        }
-
-                        post.releaseConnection();
-
-// 					} else if (response.getApiId() == ApiId.RX_64_RESPONSE) {
-// 						log.info("Received RX 64 packet " + ((RxResponse64)response));
-					} else {
-						log.info("Ignoring mystery packet " + response.toString());
-					}
-
-//					log.debug("Received response: " + response.toString() + ", count is " + count + ", errors is " + errors);
-				} catch (Exception e) {
-					log.error(e);
-				}
-
-                // Check for queued tx packet
-                httpResponse = httpClient.execute(get);
+                // Check if there are queued tx requests on the server
+                httpResponse = httpClient.execute(httpHost, httpGet, httpClientContext);
                 br = new BufferedReader(new InputStreamReader(httpResponse.getEntity().getContent()));
 
                 result = new StringBuffer();
@@ -249,8 +245,9 @@ public class ReceivePacket {
                 }
 
                 last = System.currentTimeMillis();
-                get.releaseConnection();
+                httpGet.releaseConnection();
 
+                // Delay
                 Thread.sleep(2000);
 			}
 		} finally {
